@@ -21,9 +21,12 @@ func _on_connected(protocol: String = "") -> void:
         {"trigger": "button", "action": "melee_slash", "modifiers": ["fire"]},
         {"trigger": "button", "action": "projectile", "modifiers": []}
     ]}).to_utf8_buffer())
-    peer.put_packet(JSON.stringify({"type": "practice", "difficulty": "easy"}).to_utf8_buffer())
-    peer.put_packet(JSON.stringify({"type": "use_skill", "index": 0}).to_utf8_buffer())
-    peer.put_packet(JSON.stringify({"type": "ping"}).to_utf8_buffer())
+      peer.put_packet(JSON.stringify({"type": "practice", "difficulty": "easy"}).to_utf8_buffer())
+      peer.put_packet(JSON.stringify({"type": "use_skill", "index": 0}).to_utf8_buffer())
+      peer.put_packet(JSON.stringify({"type": "action", "action": "light"}).to_utf8_buffer())
+      peer.put_packet(JSON.stringify({"type": "action", "action": "dash"}).to_utf8_buffer())
+      peer.put_packet(JSON.stringify({"type": "action", "action": "parry"}).to_utf8_buffer())
+      peer.put_packet(JSON.stringify({"type": "ping"}).to_utf8_buffer())
 
 func _on_data() -> void:
     var peer := ws.get_peer(1)
@@ -41,6 +44,11 @@ func _on_data() -> void:
                 print("Match vs %s" % msg.opponent)
             "loadout_ok":
                 print("Loadout set")
+            "action_result":
+                if msg.ok:
+                    print("Action %s ok" % msg.action)
+                else:
+                    print("Action %s failed: %s" % [msg.action, msg.reason])
             "skill_executed":
                 print("Skill %d executed (cost %d)" % [msg.index, msg.skill.cost])
             "profile":

@@ -7,7 +7,9 @@ export interface Player {
   name?: string;
   currentMatch?: number;
   loadout?: {
-    weapon: string;
+    weapon: import('./weapons').Weapon;
     skills: import('./skills').Skill[];
   };
+  skillCooldowns?: number[];
+  combat?: import('./combat').CombatState;
 }

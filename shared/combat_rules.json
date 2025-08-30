@@ -4,6 +4,7 @@
   ],
   "cancelRules": [
     { "from": "light", "to": "dash" },
-    { "from": "air_light", "to": "ground_light", "onHit": true }
+    { "from": "air_light", "to": "ground_light", "onHit": true },
+    { "from": "jump", "to": "air_light" }
   ]
 }
