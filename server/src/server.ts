@@ -6,6 +6,16 @@ import { enqueue, remove } from './matchmaker';
 import { Player } from './types';
 import { spawnBot, Bot } from './bot';
 import { buildSkill, SkillDef, Skill } from './skills';
+import { getWeapon } from './weapons';
+import {
+  createCombatState,
+  performAction,
+  CombatAction,
+  attemptHit,
+  setPosition,
+  setWeapon,
+  update,
+} from './combat';
 
 const wss = new WebSocketServer({ port: 8080 });
 const players = new Map<number, Player>();
@@ -15,6 +25,14 @@ let nextPlayerId = 1;
 initDB(path.join(__dirname, '..', 'arena.db')).then(() => {
   console.log('Database initialized');
 });
+
+setInterval(() => {
+  for (const player of players.values()) {
+    if (player.combat) {
+      update(player.combat);
+    }
+  }
+}, 50);
 
 wss.on('connection', (socket: WebSocket) => {
   const id = nextPlayerId++;
@@ -62,6 +80,7 @@ async function handleMessage(player: Player, msg: any) {
       if (!bots.has(player.id)) {
         const matchId = Date.now();
         player.currentMatch = matchId;
+        player.combat = createCombatState(player.loadout?.weapon);
         player.socket.send(
           JSON.stringify({ type: 'match_start', opponent: 'bot', matchId })
         );
@@ -75,8 +94,9 @@ async function handleMessage(player: Player, msg: any) {
         Array.isArray(msg.skills) &&
         msg.skills.length === 2
       ) {
+        const weapon = getWeapon(msg.weapon);
         const built: Skill[] = [];
-        let valid = true;
+        let valid = !!weapon;
         for (const def of msg.skills as SkillDef[]) {
           const skill = buildSkill(def);
           if (!skill) {
@@ -85,12 +105,16 @@ async function handleMessage(player: Player, msg: any) {
           }
           built.push(skill);
         }
-        if (valid) {
-          player.loadout = { weapon: msg.weapon, skills: built as any };
+        if (valid && weapon) {
+          player.loadout = { weapon, skills: built };
+          player.skillCooldowns = built.map(() => 0);
+          if (player.combat) {
+            setWeapon(player.combat, weapon);
+          }
           player.socket.send(JSON.stringify({ type: 'loadout_ok' }));
         } else {
           player.socket.send(
-            JSON.stringify({ type: 'error', message: 'invalid_skill' })
+            JSON.stringify({ type: 'error', message: 'invalid_loadout' })
           );
         }
       }
@@ -101,9 +125,72 @@ async function handleMessage(player: Player, msg: any) {
         typeof msg.index === 'number' &&
         player.loadout.skills[msg.index]
       ) {
+        const now = Date.now();
+        const cd = player.skillCooldowns![msg.index];
         const skill = player.loadout.skills[msg.index];
+        if (now >= cd) {
+          player.skillCooldowns![msg.index] = now + skill.cooldown;
+          player.socket.send(
+            JSON.stringify({ type: 'skill_executed', index: msg.index, skill })
+          );
+        } else {
+          player.socket.send(
+            JSON.stringify({
+              type: 'error',
+              message: 'skill_cooldown',
+              readyIn: cd - now,
+            })
+          );
+        }
+      }
+      break;
+    case 'move':
+      if (
+        player.combat &&
+        typeof msg.x === 'number' &&
+        typeof msg.y === 'number'
+      ) {
+        setPosition(player.combat, msg.x, msg.y);
+      }
+      break;
+    case 'attack':
+      if (player.combat && typeof msg.target === 'number') {
+        const target = players.get(msg.target);
+        if (target?.combat) {
+          const result = attemptHit(
+            player.combat,
+            target.combat,
+            msg.damage ?? 10,
+          );
+          player.socket.send(
+            JSON.stringify({
+              type: 'attack_result',
+              target: msg.target,
+              ...result,
+            }),
+          );
+          target.socket.send(
+            JSON.stringify({
+              type: 'hit',
+              from: player.id,
+              ...result,
+            }),
+          );
+        }
+      }
+      break;
+    case 'action':
+      if (player.combat && typeof msg.action === 'string') {
+        const result = performAction(
+          player.combat,
+          msg.action as CombatAction
+        );
         player.socket.send(
-          JSON.stringify({ type: 'skill_executed', index: msg.index, skill })
+          JSON.stringify({
+            type: 'action_result',
+            action: msg.action,
+            ...result,
+          })
         );
       }
       break;

@@ -4,6 +4,7 @@ const SPEED := 200.0
 var can_dash := true
 var can_attack := true
 var is_guarding := false
+var is_parrying := false
 
 func _physics_process(delta: float) -> void:
     var input_vec := Vector2(
@@ -19,6 +20,11 @@ func _physics_process(delta: float) -> void:
         perform_attack("heavy")
 
     is_guarding = Input.is_action_pressed("guard")
+
+    if Input.is_action_just_pressed("parry") and not is_parrying:
+        is_parrying = true
+        await get_tree().create_timer(0.2).timeout
+        is_parrying = false
 
     if Input.is_action_just_pressed("dash") and can_dash:
         velocity += input_vec * 400
