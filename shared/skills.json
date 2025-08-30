@@ -1,0 +1,18 @@
+{
+  "triggers": [
+    "button",
+    "airborne"
+  ],
+  "actions": [
+    "melee_slash",
+    "projectile",
+    "dash"
+  ],
+  "modifiers": [
+    "fire",
+    "ice",
+    "lightning",
+    "range_up",
+    "cooldown_down"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "comboChains": [
+    ["light", "light", "heavy"]
+  ],
+  "cancelRules": [
+    { "from": "light", "to": "dash" },
+    { "from": "air_light", "to": "ground_light", "onHit": true }
+  ]
+}

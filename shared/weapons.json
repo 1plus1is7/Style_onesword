@@ -1,0 +1,16 @@
+{
+  "weapons": [
+    {
+      "id": "sword",
+      "name": "Sword",
+      "reach": 1.5,
+      "attackSpeed": 1.0
+    },
+    {
+      "id": "spear",
+      "name": "Spear",
+      "reach": 2.5,
+      "attackSpeed": 0.8
+    }
+  ]
+}

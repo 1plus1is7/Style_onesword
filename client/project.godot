@@ -1,0 +1,11 @@
+[gd_resource type="ConfigFile" format=4]
+
+[application]
+config/name="Arena Client"
+run/main_scene="res://main.tscn"
+
+[input]
+attack_light={"deadzone":0.5,"events":[{"type":"InputEventKey","physical_keycode":74}]}
+attack_heavy={"deadzone":0.5,"events":[{"type":"InputEventKey","physical_keycode":75}]}
+guard={"deadzone":0.5,"events":[{"type":"InputEventKey","physical_keycode":76}]}
+dash={"deadzone":0.5,"events":[{"type":"InputEventKey","physical_keycode":32}]}
